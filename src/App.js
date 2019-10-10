@@ -1,28 +1,12 @@
 import React, { useState } from "react";
 import * as R from "ramda";
 
-const Expense = props => {
-  const { month, value } = props;
-  return (
-    <div style={{ display: "block" }}>
-      ${value} {month}
-    </div>
-  );
-};
-
-const InputExpense = props => {
-  const { value, onUpdate, onClick } = props;
-
-  return (
-    <>
-      <input value={value} onChange={onUpdate} />
-      <button onClick={onClick}>Add</button>
-    </>
-  );
-};
+import MonthlyTable from "./MonthlyTable";
+import InputExpense from "./InputExpense";
 
 function App() {
   const [expenses, setExpenses] = useState([]);
+  const initialSaldo = 1000;
   const [money, setMoney] = useState(0);
 
   const updateExpenseValue = e => {
@@ -30,25 +14,23 @@ function App() {
     if (isNaN(value)) return;
     setMoney(value);
   };
-  const addToList = () => {
-    setExpenses(R.append({ month: "Feb", money }, expenses));
+  const addToList = multiplier => {
+    const realValue = money * multiplier;
+    if (realValue === 0) return;
+    setExpenses(R.append({ month: Date.now(), money: realValue }, expenses));
   };
-
-  const mapIndexed = R.addIndex(R.map);
 
   return (
     <>
       <InputExpense
         value={money}
         onUpdate={updateExpenseValue}
-        onClick={addToList}
+        addOutgoing={addToList}
+        addIncoming={addToList}
       />
-      {mapIndexed(
-        (e, i) => (
-          <Expense key={i} month={e.month} value={e.money} />
-        ),
-        expenses
-      )}
+      <MonthlyTable list={expenses} limitTo={5} />
+      <hr />
+      <b>{initialSaldo + R.sum(R.map(e => e.money, expenses))}</b>
     </>
   );
 }
